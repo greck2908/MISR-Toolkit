@@ -16,8 +16,8 @@
 
 #ifndef MISRTOOLKIT_H
 #define MISRTOOLKIT_H
-
-#define MTK_VERSION "1.4.5"
+/* TODO: Enable SDL checks and remove -D _CRT_SECURE_NO_WARNINGS*/
+#define MTK_VERSION "1.5.1"
 
 #ifdef __cplusplus
 extern "C"
