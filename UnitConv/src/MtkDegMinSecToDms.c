@@ -17,7 +17,6 @@
 #include "MisrUnitConv.h"
 #include "MisrError.h"
 #include <math.h>
-#include <stdlib.h>
 
 /** \brief Convert unpacked Degrees, minutes, seconds to packed
  *
@@ -52,7 +51,7 @@ MTKt_status MtkDegMinSecToDms(
   } else {
     sgn = 1;
   }
-  deg = abs(deg);
+  deg = (int)fabs(deg);
 
   /* Check degrees, minutes, seconds bounds */
 

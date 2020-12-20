@@ -39,7 +39,7 @@ extern PyTypeObject MtkMapInfoType;
 static void
 MtkReProject_dealloc(MtkReProject* self)
 {
-   Py_TYPE(self)->tp_free((PyObject*)self);
+   self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -212,6 +212,8 @@ MtkReProject_ResampleCubicConvolution(MtkReProject *self, PyObject *args)
         PyErr_SetString(PyExc_StandardError, "Wrong number of arguments.");
         return NULL;
     }
+    PyErr_SetString(PyExc_StandardError, "Unknown error.");
+    return NULL;
 
 ERROR_HANDLE:
     MtkDataBufferFree(&srcdata);
@@ -300,6 +302,8 @@ MtkReProject_ResampleNearestNeighbor(MtkReProject *self, PyObject *args)
         PyErr_SetString(PyExc_StandardError, "Wrong number of arguments.");
         return NULL;
     }
+    PyErr_SetString(PyExc_StandardError, "Unknown error.");
+    return NULL;
 
 ERROR_HANDLE:
     MtkDataBufferFree(&srcdata);
@@ -381,6 +385,8 @@ MtkReProject_TransformCoordinates(MtkReProject *self, PyObject *args)
         PyErr_SetString(PyExc_StandardError, "Wrong number of arguments.");
         return NULL;
     }
+    PyErr_SetString(PyExc_StandardError, "Unknown error.");
+    return NULL;
 
 ERROR_HANDLE:
     MtkDataBufferFree(&latbuf);
@@ -409,7 +415,8 @@ PyMethodDef mtkreproject_methods[] = {
 };
 
 PyTypeObject MtkReProjectType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkReProject",      /*tp_name*/
     sizeof(MtkReProject),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/

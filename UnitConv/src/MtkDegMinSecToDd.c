@@ -17,7 +17,6 @@
 #include "MisrUnitConv.h"
 #include "MisrError.h"
 #include <math.h>
-#include <stdlib.h>
 
 /** \brief Convert unpacked degrees, minutes, seconds to decimal degrees.
  *
@@ -50,7 +49,7 @@ MTKt_status MtkDegMinSecToDd(
   } else {
     sgn = 1;
   }
-  deg = abs(deg);
+  deg = (int)fabs(deg);
 
   /* Check degrees, minutes, seconds bounds */
 

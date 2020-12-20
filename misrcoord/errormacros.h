@@ -15,7 +15,7 @@
      exit(1); \
   }
 
-#define MTK_ERROR(msg) \
+#define ERROR(msg) \
   { \
      fprintf(stderr, "Error: %s at line %d\n", msg, __LINE__); \
      exit(1); \

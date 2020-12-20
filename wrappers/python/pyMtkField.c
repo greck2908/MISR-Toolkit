@@ -45,7 +45,7 @@ MtkField_dealloc(MtkField* self)
 
    Py_XDECREF(self->file_id);
 
-   Py_TYPE(self)->tp_free((PyObject*)self);
+   self->ob_type->tp_free((PyObject*)self);
 
 }
 
@@ -58,15 +58,9 @@ MtkField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    self = (MtkField *)type->tp_alloc(type, 0);
    if (self != NULL)
    {
-        #if PY_MAJOR_VERSION >= 3
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, "U", kwlist,
-                                             &self->fieldname)) {
-        #else
-            if (!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist,
-                                             &self->fieldname)) {
-        #endif
-              return NULL;
-            }
+      if (!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist,
+                                       &self->fieldname))
+         return NULL; 
 
       Py_INCREF(self->fieldname);
    }
@@ -127,23 +121,15 @@ ReadData(MtkField *self, PyObject *args)
       }
 
       data = PyObject_New(DataPlane, &DataPlaneType);
+      data = (DataPlane*)PyObject_Init((PyObject*)data, &DataPlaneType);
       DataPlane_init(data,NULL,NULL);
 
-      if (self->file_id->ncid > 0) {
-        status = MtkReadDataNcid(self->file_id->ncid,
-                                PyString_AsString(self->gridname),
-                                PyString_AsString(self->fieldname),
-                                region->region,
-                                &data->databuf,
-                                &data->mapinfo);
-      } else {
-        status = MtkReadDataFid(self->file_id->fid,
-                                PyString_AsString(self->gridname),
-                                PyString_AsString(self->fieldname),
-                                region->region,
-                                &data->databuf,
-                                &data->mapinfo);
-      }
+      status = MtkReadDataFid(self->file_id->fid,
+	  		   PyString_AsString(self->gridname),
+			   PyString_AsString(self->fieldname),
+			   region->region,
+			   &data->databuf,
+			   &data->mapinfo);
       if (status != MTK_SUCCESS)
       {
          PyErr_Format(PyExc_StandardError, "MtkReadData Failed: %s",err_msg[status]); 
@@ -165,17 +151,10 @@ ReadData(MtkField *self, PyObject *args)
    start_block = (int) PyInt_AsLong(arg1);
    end_block = (int) PyInt_AsLong(arg2);
 
-   if (self->file_id->ncid > 0) {
-     status = MtkReadBlockRangeNcid(self->file_id->ncid,
-                                   PyString_AsString(self->gridname),
-                                   PyString_AsString(self->fieldname),
-                                   start_block, end_block, &databuf);
-   } else {
-     status = MtkReadBlockRangeFid(self->file_id->fid,
-                                   PyString_AsString(self->gridname),
-                                   PyString_AsString(self->fieldname),
-                                   start_block, end_block, &databuf);
-   }
+   status = MtkReadBlockRangeFid(self->file_id->fid,
+			PyString_AsString(self->gridname),
+			PyString_AsString(self->fieldname),
+                        start_block, end_block, &databuf);
    if (status != MTK_SUCCESS)
    {
       PyErr_Format(PyExc_StandardError, "MtkReadBlockRange Failed: %s",err_msg[status]);
@@ -240,17 +219,10 @@ MtkField_getdata_type(MtkField *self, void *closure)
    MTKt_DataType datatype;
    char *types[] = MTKd_DataType;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridFieldToDataTypeNcid(self->file_id->ncid,
-                                            PyString_AsString(self->gridname),
-                                            PyString_AsString(self->fieldname),
-                                            &datatype);
-   } else {
-     status = MtkFileGridFieldToDataTypeFid(self->file_id->fid,
-                                            PyString_AsString(self->gridname),
-                                            PyString_AsString(self->fieldname),
-                                            &datatype);
-   }
+   status = MtkFileGridFieldToDataTypeFid(self->file_id->fid,
+			PyString_AsString(self->gridname),
+			PyString_AsString(self->fieldname),
+		        &datatype);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFileGridFieldToDataType Failed");
@@ -270,17 +242,10 @@ MtkField_getfill_value(MtkField *self, void *closure)
    MTKt_status status;
    MTKt_DataBuffer fillbuf = MTKT_DATABUFFER_INIT;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFillValueGetNcid(self->file_id->ncid,
-                                 PyString_AsString(self->gridname),
-                                 PyString_AsString(self->fieldname),
-                                 &fillbuf);
-   } else {
-     status = MtkFillValueGetFid(self->file_id->fid,
-                                 PyString_AsString(self->gridname),
-                                 PyString_AsString(self->fieldname),
-                                 &fillbuf);
-   }
+   status = MtkFillValueGetFid(self->file_id->fid,
+			PyString_AsString(self->gridname),
+			PyString_AsString(self->fieldname),
+  		        &fillbuf);
    if (status != MTK_SUCCESS) /* File doesn't have a fill value */
    {
       result = Py_BuildValue("i", 0);
@@ -354,11 +319,7 @@ AttrGet(MtkField *self, PyObject *args)
    if (fieldname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFieldAttrGetNcid(self->file_id->ncid,fieldname,attrname,&attrbuf);
-   } else {
-     status = MtkFieldAttrGetFid(self->file_id->fid,fieldname,attrname,&attrbuf);
-   }
+   status = MtkFieldAttrGetFid(self->file_id->fid,fieldname,attrname,&attrbuf);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFieldAttrGet Failed");
@@ -422,11 +383,7 @@ MtkField_getattr_list(MtkField *self, void *closure)
    if (fieldname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFieldAttrListNcid(self->file_id->ncid,fieldname,&num_attrs,&attrlist);
-   } else {
-     status = MtkFieldAttrListFid(self->file_id->fid,fieldname,&num_attrs,&attrlist);
-   }
+   status = MtkFieldAttrListFid(self->file_id->fid,fieldname,&num_attrs,&attrlist);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFieldAttrList Failed");
@@ -465,7 +422,8 @@ static PyMethodDef MtkField_methods[] = {
 };
 
 PyTypeObject MtkFieldType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkField",      /*tp_name*/
     sizeof(MtkField),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/

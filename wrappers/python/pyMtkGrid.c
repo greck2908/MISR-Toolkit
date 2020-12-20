@@ -39,7 +39,7 @@ MtkGrid_dealloc(MtkGrid* self)
    Py_XDECREF(self->file_id);
 
    PyMem_Free(self->fields);
-   Py_TYPE(self)->tp_free((PyObject*)self);
+   self->ob_type->tp_free((PyObject*)self);
 
 }
 
@@ -52,17 +52,11 @@ MtkGrid_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    self = (MtkGrid *)type->tp_alloc(type, 0);
    if (self != NULL)
    {
-       #if PY_MAJOR_VERSION >= 3
-           if (!PyArg_ParseTupleAndKeywords(args, kwds, "U", kwlist,
-                                            &self->gridname)) {
-       #else
-           if (!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist,
-                                            &self->gridname)) {
-       #endif
-               return NULL;
-           }
+      if (!PyArg_ParseTupleAndKeywords(args, kwds, "S", kwlist,
+                                       &self->gridname))
+         return NULL; 
 
-       Py_INCREF(self->gridname);
+      Py_INCREF(self->gridname);
    }
 
    return (PyObject*)self;
@@ -83,11 +77,7 @@ grid_init(MtkGrid *self, const char *filename, const char *gridname, MtkFileId *
    if (self->gridname == NULL)
       return NULL;
 
-   if (file_id->ncid > 0) {
-     status = MtkFileGridToFieldListNcid(file_id->ncid, gridname, &num_fields, &fieldlist);
-   } else {
-     status = MtkFileGridToFieldListFid(file_id->fid, gridname, &num_fields, &fieldlist);
-   }
+   status = MtkFileGridToFieldListFid(file_id->fid, gridname, &num_fields, &fieldlist);
    if (status != MTK_SUCCESS)
       return NULL;
 
@@ -136,16 +126,13 @@ Field(MtkGrid *self, PyObject *args)
    filename =PyString_AsString(self->filename);
    gridname = PyString_AsString(self->gridname);
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridFieldCheckNcid(self->file_id->ncid, gridname, fieldname);
-   } else {
-     status = MtkFileGridFieldCheckFid(self->file_id->fid, gridname, fieldname);
-   }
+   status = MtkFileGridFieldCheckFid(self->file_id->fid, gridname, fieldname);
    if (status == MTK_SUCCESS) {
 
      i = self->num_fields;
 
      self->fields[i] = PyObject_New(MtkField, &MtkFieldType);
+     self->fields[i] = (MtkField*)PyObject_Init((PyObject*)self->fields[i], &MtkFieldType);
      self->fields[i]->filename = PyString_FromString(filename);
      self->fields[i]->gridname = PyString_FromString(gridname);
      self->fields[i]->fieldname = PyString_FromString(fieldname);
@@ -185,11 +172,7 @@ MtkGrid_getfield_list(MtkGrid *self, void *closure)
    if (gridname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridToFieldListNcid(self->file_id->ncid,gridname,&nfields,&fieldlist);
-   } else {
-     status = MtkFileGridToFieldListFid(self->file_id->fid,gridname,&nfields,&fieldlist);
-   }
+   status = MtkFileGridToFieldListFid(self->file_id->fid,gridname,&nfields,&fieldlist);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFileGridToFieldList Failed");
@@ -226,11 +209,7 @@ MtkGrid_getnative_field_list(MtkGrid *self, void *closure)
    if (gridname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridToNativeFieldListNcid(self->file_id->ncid,gridname,&nfields,&fieldlist);
-   } else {
-     status = MtkFileGridToNativeFieldListFid(self->file_id->fid,gridname,&nfields,&fieldlist);
-   }
+   status = MtkFileGridToNativeFieldListFid(self->file_id->fid,gridname,&nfields,&fieldlist);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFileGridToFieldList Failed");
@@ -270,21 +249,11 @@ FieldDims(MtkGrid *self, PyObject *args)
    
    if (filename == NULL || gridname == NULL)
       return NULL;
-
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridFieldToDimListNcid(self->file_id->ncid, gridname, fieldname, &dimcnt,
-                                            &dimlist, &dimsize);
-   } else {
-     status = MtkFileGridFieldToDimListFid(self->file_id->fid, gridname, fieldname, &dimcnt,
-                                           &dimlist, &dimsize);
-   }
+   status = MtkFileGridFieldToDimListFid(self->file_id->fid, gridname, fieldname, &dimcnt,
+                                      &dimlist, &dimsize);
    if (status != MTK_SUCCESS)
    {
-      if (self->file_id->ncid > 0) {
-        status = MtkFileGridFieldCheckNcid(self->file_id->ncid, gridname, fieldname);
-      } else {
-        status = MtkFileGridFieldCheckFid(self->file_id->fid, gridname, fieldname);
-      }
+      status = MtkFileGridFieldCheckFid(self->file_id->fid, gridname, fieldname);
       if (status == MTK_INVALID_FIELD)
         PyErr_Format(PyExc_NameError, "Field: %s Not Found.", fieldname);
       else
@@ -344,11 +313,7 @@ MtkGrid_getresolution(MtkGrid *self, void *closure)
    if (gridname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkFileGridToResolutionNcid(self->file_id->ncid,gridname,&resolution);
-   } else {
-     status = MtkFileGridToResolutionFid(self->file_id->fid,gridname,&resolution);
-   }
+   status = MtkFileGridToResolutionFid(self->file_id->fid,gridname,&resolution);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkFileGridToResolution Failed");
@@ -391,11 +356,7 @@ AttrGet(MtkGrid *self, PyObject *args)
    if (gridname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkGridAttrGetNcid(self->file_id->ncid,gridname,attrname,&attrbuf);
-   } else {
-     status = MtkGridAttrGetFid(self->file_id->fid,gridname,attrname,&attrbuf);
-   }
+   status = MtkGridAttrGetFid(self->file_id->fid,gridname,attrname,&attrbuf);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkGridAttrGet Failed");
@@ -458,11 +419,7 @@ MtkGrid_getattr_list(MtkGrid *self, void *closure)
    if (gridname == NULL)
       return NULL;
 
-   if (self->file_id->ncid > 0) {
-     status = MtkGridAttrListNcid(self->file_id->ncid,gridname,&num_attrs,&attrlist);
-   } else {
-     status = MtkGridAttrListFid(self->file_id->fid,gridname,&num_attrs,&attrlist);
-   }
+   status = MtkGridAttrListFid(self->file_id->fid,gridname,&num_attrs,&attrlist);
    if (status != MTK_SUCCESS)
    {
       PyErr_SetString(PyExc_StandardError, "MtkGridAttrList Failed");
@@ -505,7 +462,8 @@ static PyMethodDef MtkGrid_methods[] = {
 };
 
 PyTypeObject MtkGridType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkGrid",      /*tp_name*/
     sizeof(MtkGrid),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/

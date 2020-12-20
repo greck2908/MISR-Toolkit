@@ -21,7 +21,7 @@
 static void
 MtkSomCoord_dealloc(MtkSomCoord* self)
 {
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -65,7 +65,8 @@ static PyMemberDef MtkSomCoord_members[] = {
 };
 
 PyTypeObject MtkSomCoordType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkSomCoord", /*tp_name*/
     sizeof(MtkSomCoord),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/

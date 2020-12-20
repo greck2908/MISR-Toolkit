@@ -45,7 +45,7 @@ MtkMapInfo_dealloc(MtkMapInfo* self)
    Py_XDECREF(self->som);
    Py_XDECREF(self->geo);
    Py_XDECREF(self->pixelcenter);
-   Py_TYPE(self)->tp_free((PyObject*)self);
+   self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -58,10 +58,13 @@ MtkMapInfo_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    {
       self->pixelcenter = PyBool_FromLong(0);
       self->som = (MtkSomRegion*)PyObject_New(MtkSomRegion, &MtkSomRegionType);
+      self->som = (MtkSomRegion*)PyObject_Init((PyObject*)self->som, &MtkSomRegionType);
       MtkSomRegion_init(self->som,NULL,NULL);
       self->geo = (MtkGeoRegion*)PyObject_New(MtkGeoRegion, &MtkGeoRegionType);
+      self->geo = (MtkGeoRegion*)PyObject_Init((PyObject*)self->geo, &MtkGeoRegionType);
       MtkGeoRegion_init(self->geo,NULL,NULL);
       self->pp = (MtkProjParam*)PyObject_New(MtkProjParam, &MtkProjParamType);
+      self->pp = (MtkProjParam*)PyObject_Init((PyObject*)self->pp, &MtkProjParamType);
       MtkProjParam_init(self->pp,NULL,NULL);
 
       if (self->pixelcenter == NULL || self->som == NULL || self->pp == NULL)
@@ -79,10 +82,13 @@ MtkMapInfo_init(MtkMapInfo *self, PyObject *args, PyObject *kwds)
 {
    self->pixelcenter = PyBool_FromLong(0);
    self->som = (MtkSomRegion*)PyObject_New(MtkSomRegion, &MtkSomRegionType);
+   self->som = (MtkSomRegion*)PyObject_Init((PyObject*)self->som, &MtkSomRegionType);
    MtkSomRegion_init(self->som,NULL,NULL);
    self->geo = (MtkGeoRegion*)PyObject_New(MtkGeoRegion, &MtkGeoRegionType);
+   self->geo = (MtkGeoRegion*)PyObject_Init((PyObject*)self->geo, &MtkGeoRegionType);
    MtkGeoRegion_init(self->geo,NULL,NULL);
    self->pp = (MtkProjParam*)PyObject_New(MtkProjParam, &MtkProjParamType);
+   self->pp = (MtkProjParam*)PyObject_Init((PyObject*)self->pp, &MtkProjParamType);
    MtkProjParam_init(self->pp,NULL,NULL);
 
    if (self->pixelcenter == NULL || self->som == NULL || self->pp == NULL)
@@ -670,7 +676,8 @@ static PyMethodDef MtkMapInfo_methods[] = {
 };
 
 PyTypeObject MtkMapInfoType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkMapInfo",  /*tp_name*/
     sizeof(MtkMapInfo),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/

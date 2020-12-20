@@ -117,7 +117,7 @@ typedef struct {
 } MTKt_GenericMapInfo;
 
 
-#define MTKT_GENERICMAPINFO_INIT { 0, 0, 0, 0, 0, 0, 0, 0, {0,0,0}, {0,0,0}, MTKe_ORIGIN_UL, MTKe_PIX_REG_CENTER }
+#define MTKT_GENERICMAPINFO_INIT { 0, 0, 0, 0, 0, 0, 0, 0, {0,0,0}, {0,0,0}, 0,0 }
 
 /** \brief GCTP projection information */
 typedef struct {

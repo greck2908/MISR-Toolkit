@@ -27,7 +27,7 @@ MtkSomRegion_dealloc(MtkSomRegion* self)
     Py_XDECREF(self->ulc);
     Py_XDECREF(self->ctr);
     Py_XDECREF(self->lrc);
-    Py_TYPE(self)->tp_free((PyObject*)self); 
+    self->ob_type->tp_free((PyObject*)self); 
 }
 
 static PyObject *
@@ -40,10 +40,13 @@ MtkSomRegion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    {  
       self->path = 0;
       self->ulc = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+      self->ulc = (MtkSomCoord*)PyObject_Init((PyObject*)self->ulc, &MtkSomCoordType);
       MtkSomCoord_init(self->ulc,NULL,NULL);
       self->ctr = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+      self->ctr = (MtkSomCoord*)PyObject_Init((PyObject*)self->ctr, &MtkSomCoordType);
       MtkSomCoord_init(self->ctr,NULL,NULL);
       self->lrc = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+      self->lrc = (MtkSomCoord*)PyObject_Init((PyObject*)self->lrc, &MtkSomCoordType);
       MtkSomCoord_init(self->lrc,NULL,NULL);
 
       if (self->ulc == NULL || self->ctr == NULL || self->lrc == NULL)
@@ -61,10 +64,13 @@ MtkSomRegion_init(MtkSomRegion *self, PyObject *args, PyObject *kwds)
 {
    self->path = 0;
    self->ulc = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+   self->ulc = (MtkSomCoord*)PyObject_Init((PyObject*)self->ulc, &MtkSomCoordType);
    MtkSomCoord_init(self->ulc,NULL,NULL);
    self->ctr = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+   self->ctr = (MtkSomCoord*)PyObject_Init((PyObject*)self->ctr, &MtkSomCoordType);
    MtkSomCoord_init(self->ctr,NULL,NULL);
    self->lrc = (MtkSomCoord*)PyObject_New(MtkSomCoord, &MtkSomCoordType);
+   self->lrc = (MtkSomCoord*)PyObject_Init((PyObject*)self->lrc, &MtkSomCoordType);
    MtkSomCoord_init(self->lrc,NULL,NULL);
 
    if (self->ulc == NULL || self->ctr == NULL || self->lrc == NULL)
@@ -125,7 +131,8 @@ static PyMethodDef MtkSomRegion_methods[] = {
 };
 
 PyTypeObject MtkSomRegionType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkSomRegion", /*tp_name*/
     sizeof(MtkSomRegion),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/

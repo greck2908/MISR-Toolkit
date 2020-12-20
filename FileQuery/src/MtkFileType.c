@@ -38,76 +38,40 @@ MTKt_status MtkFileType(
   const char *filename,    /**< [IN] File name */
   MTKt_FileType *filetype  /**< [OUT] File type */ )
 {
-  MTKt_status status;      	/* Return status */
-
-  status = MtkFileTypeNC(filename, filetype); // try netCDF
-  if (status != MTK_NETCDF_OPEN_FAILED) return status;
-
-  return MtkFileTypeHDF(filename, filetype); // try HDF
-}
-
-MTKt_status MtkFileTypeNC(
-  const char *filename,    /**< [IN] File name */
-  MTKt_FileType *filetype  /**< [OUT] File type */ )
-{
-  MTKt_status status;
-  MTKt_status status_code;
-  int ncid = 0;
-  
-  if (filename == NULL) MTK_ERR_CODE_JUMP(MTK_NULLPTR);
-
-  /* Open file */
-  {
-    int nc_status = nc_open(filename, NC_NOWRITE, &ncid);
-    if (nc_status != NC_NOERR) MTK_ERR_CODE_JUMP(MTK_NETCDF_OPEN_FAILED);
-  }
-
-  /* Determine MISR product file type */
-  status = MtkFileTypeNcid(ncid, filetype);
-  MTK_ERR_COND_JUMP(status);
-
-  /* Close file */
-  {
-    int nc_status = nc_close(ncid);
-    if (nc_status != NC_NOERR) MTK_ERR_CODE_JUMP(MTK_NETCDF_CLOSE_FAILED);
-  }
-  ncid = 0;
-
-  return MTK_SUCCESS;
-
- ERROR_HANDLE:
-  if (ncid != 0) nc_close(ncid);
-  return status_code;
-}
-
-MTKt_status MtkFileTypeHDF(
-  const char *filename,    /**< [IN] File name */
-  MTKt_FileType *filetype  /**< [OUT] File type */ )
-{
   MTKt_status status;
   MTKt_status status_code;
   intn hdf_status;
-  int32 fid = FAIL;
+  int32 Fid = FAIL;
+  #ifdef _WIN32 /* Work around so Visual C++ 2005 will compile correctly with /O2 */
+    char temp_filename[1000];
+  #endif
   
   if (filename == NULL)
     MTK_ERR_CODE_JUMP(MTK_NULLPTR);
 
-  fid = GDopen((char *)filename, DFACC_READ);
-  if (fid == FAIL) MTK_ERR_CODE_JUMP(MTK_HDFEOS_GDOPEN_FAILED);
+  #ifdef _WIN32 /* Work around so Visual C++ 2005 will compile correctly with /O2 */
+    strcpy(temp_filename, filename);
+    hdf_status = Fid = GDopen(temp_filename,DFACC_READ);
+  #else
+    hdf_status = Fid = GDopen((char*)filename,DFACC_READ);
+  #endif
+  
+  if (hdf_status == FAIL)
+    MTK_ERR_CODE_JUMP(MTK_HDFEOS_GDOPEN_FAILED);
 
   /* Determine MISR product file type */
-  status = MtkFileTypeFid(fid, filetype);
+  status = MtkFileTypeFid(Fid, filetype);
   MTK_ERR_COND_JUMP(status);
 
-  hdf_status = GDclose(fid);
+  hdf_status = GDclose(Fid);
   if (hdf_status == FAIL)
     MTK_ERR_CODE_JUMP(MTK_HDFEOS_GDCLOSE_FAILED);
-  fid = FAIL;
+  Fid = FAIL;
 
   return MTK_SUCCESS;
 
 ERROR_HANDLE:
-  if (fid != FAIL) GDclose(fid);
+  if (Fid != FAIL) GDclose(Fid);
   return status_code;
 }
 
@@ -163,35 +127,6 @@ MTKt_status MtkFileTypeFid(
   if (projparm[11] == 0)
   {
     *filetype = MTK_CONVENTIONAL;
-
-    /* Check if MISR_HR product */
-    hdf_status = EHidinfo(Fid, &HDFfid, &sid);
-    if (hdf_status == FAIL)
-      return MTK_SUCCESS;
-
-    /* Get Local Granual ID */
-    status = MtkFileLGIDFid(sid,&lgid);
-    if (status != MTK_SUCCESS)
-      return MTK_SUCCESS;
-
-    fn_start = strstr(lgid, "MISR_HR_");
-    if (fn_start == NULL)
-      return MTK_SUCCESS;
-
-    fn_start += 8; /* Skip MISR_HR_ */
-
-    /* Determine file type */
-    if (strncmp(fn_start,"BRF",3) == 0)
-      *filetype = MTK_HR_BRF;
-    else if (strncmp(fn_start,"RPV",3) == 0)
-      *filetype = MTK_HR_RPV;
-    else if (strncmp(fn_start,"TIP",3) == 0)
-      *filetype = MTK_HR_TIP;
-    else
-      *filetype = MTK_UNKNOWN;
-
-    free(lgid);
-
     return MTK_SUCCESS;
   }
 
@@ -246,8 +181,6 @@ MTKt_status MtkFileTypeFid(
     *filetype = MTK_PP;
   else if (strncmp(fn_start,"TC_CLOUD",8) == 0)
     *filetype = MTK_TC_CLOUD;
-  else if (strncmp(fn_start,"CMV_T",5) == 0)
-    *filetype = MTK_CMV_NRT;
   else
     *filetype = MTK_UNKNOWN;
 
@@ -259,45 +192,6 @@ ERROR_HANDLE:
   if (gridlist != NULL)
     MtkStringListFree(num_grids, &gridlist);
 
-  return status_code;
-
-}
-
-MTKt_status MtkFileTypeNcid(
-  int ncid,               /**< [IN] netCDF file identifier */
-  MTKt_FileType *filetype  /**< [OUT] File type */ )
-{
-  MTKt_status status;
-  MTKt_status status_code;
-  
-  if (filetype == NULL)
-    MTK_ERR_CODE_JUMP(MTK_NULLPTR);
-
-  /* Get Local Granual ID */
-
-  char *lgid;
-  status = MtkFileLGIDNcid(ncid,&lgid);
-  if (status != MTK_SUCCESS) MTK_ERR_CODE_JUMP(status);
-
-  char *fn_start = strstr(lgid, "MISR_AM1_");
-  if (fn_start == NULL)
-    MTK_ERR_CODE_JUMP(MTK_FAILURE);
-
-  fn_start += 9; /* Skip MISR_AM1_ */
-
-  /* Determine file type */
-  if (strncmp(fn_start,"AS_AEROSOL",10) == 0)
-    *filetype = MTK_AS_AEROSOL;
-  else if (strncmp(fn_start,"AS_LAND",7) == 0)
-    *filetype = MTK_AS_LAND;
-  else
-    *filetype = MTK_UNKNOWN;
-
-  free(lgid);
-
-  return MTK_SUCCESS;
-
-ERROR_HANDLE:
   return status_code;
 
 }

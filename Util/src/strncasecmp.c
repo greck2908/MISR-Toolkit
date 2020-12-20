@@ -14,7 +14,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifndef strncasecmp
 int strncasecmp(const char *s1, const char *s2, size_t n)
 {
   if (n == 0)
@@ -31,5 +30,4 @@ int strncasecmp(const char *s1, const char *s2, size_t n)
 
   return tolower(*(unsigned char *) s1) - tolower(*(unsigned char *) s2);
 }
-#endif
 

@@ -17,7 +17,6 @@
 #ifndef MISRUTIL_H
 #define MISRUTIL_H
 
-#include <netcdf.h>
 #include <MisrError.h>
 #include <mfhdf.h>
 #ifndef _WIN32
@@ -174,9 +173,7 @@ typedef struct {
                       { 2451179.5,  32.0 },  /* 1999 JAN  1 =JD 2451179.5  TAI-UTC=  32.0000000 S */ \
                       { 2453736.5,  33.0 },  /* 2006 JAN  1 =JD 2453736.5  TAI-UTC=  33.0000000 S */ \
                       { 2454832.5,  34.0 },  /* 2009 JAN  1 =JD 2454832.5  TAI-UTC=  34.0000000 S */ \
-                      { 2456109.5,  35.0 },  /* 2012 JUL  1 =JD 2456109.5  TAI-UTC=  35.0000000 S */ \
-                      { 2457204.5,  36.0 },  /* 2015 JUL  1 =JD 2457204.5  TAI-UTC=  36.0000000 S */ \
-                      { 2457754.5,  37.0 }}  /* 2017 JAN  1 =JD 2457754.5  TAI-UTC=  37.0000000 S */
+                      { 2456109.5,  35.0 }}  /* 2009 JAN  1 =JD 2456109.5  TAI-UTC=  35.0000000 S */
 
 MTKt_status MtkDataBufferAllocate( int nline,
 				   int nsample,
@@ -201,9 +198,6 @@ MTKt_status MtkDataBufferImport( int nline,
 
 MTKt_status MtkHdfToMtkDataTypeConvert( int32 hdf_datatype,
                                         MTKt_DataType *datatype );
-
-MTKt_status MtkNcToMtkDataTypeConvert( nc_type nc_datatype,
-                                       MTKt_DataType *datatype );
 
 MTKt_status MtkParseFieldname( const char *fieldname,
 			       char **basefieldname,
@@ -259,23 +253,11 @@ MTKt_status MtkUtcToTai( char utc_datetime[MTKd_DATETIME_LEN],
 MTKt_status MtkUtcToUtcJd( char utc_datetime[MTKd_DATETIME_LEN],
                  double jdUTC[2] );
 
-
-typedef struct {
-  int gid;  // netcdf group id
-  int varid;  // netcdf variable id
-} MTKt_ncvarid;
-
-MTKt_status MtkNCVarId(int Ncid, const char *Name, MTKt_ncvarid *Var);
-
 char *MtkVersion(void);
 
-
 #ifdef _MSC_VER
-char* win_strcasestr(const char *s, const char *find);
-#define strncasecmp _strnicmp
-#define strdup _strdup
-#define strlwr _strlwr
-#define strcasestr win_strcasestr
+char* strcasestr(const char *s, const char *find);
+int strncasecmp(const char *s1, const char *s2, unsigned int n);
 #endif
 
 #endif /* MISRUTIL_H */

@@ -18,7 +18,6 @@
 #include "MisrError.h"
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 int main () {
 
@@ -43,8 +42,8 @@ int main () {
 
   status = MtkDdToDegMinSec(dd, &deg, &min, &sec);
   if (status == MTK_SUCCESS &&
-      abs(deg - deg_expected) == 0 &&
-      abs(min - min_expected) == 0 &&
+      fabs(deg - deg_expected) == 0 &&
+      fabs(min - min_expected) == 0 &&
       fabs(sec - sec_expected) < 0.01) {
     MTK_PRINT_STATUS(cn,".");
   } else {
@@ -60,8 +59,8 @@ int main () {
 
   status = MtkDdToDegMinSec(dd, &deg, &min, &sec);
   if (status == MTK_SUCCESS &&
-      abs(deg - deg_expected) == 0 &&
-      abs(min - min_expected) == 0 &&
+      fabs(deg - deg_expected) == 0 &&
+      fabs(min - min_expected) == 0 &&
       fabs(sec - sec_expected) < 0.01) {
     MTK_PRINT_STATUS(cn,".");
   } else {

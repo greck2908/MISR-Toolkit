@@ -24,7 +24,7 @@ extern int MtkGeoBlock_init(MtkGeoBlock *self, PyObject *args, PyObject *kwds);
 static void
 MtkBlockCorners_dealloc(MtkBlockCorners* self)
 {
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -57,6 +57,7 @@ MtkBlockCorners_init(MtkBlockCorners *self, PyObject *args, PyObject *kwds)
       self->gb[i] = (MtkGeoBlock*)PyObject_New(MtkGeoBlock, &MtkGeoBlockType);
       if (self->gb[i] == NULL)
 	 return -1;
+      self->gb[i] = (MtkGeoBlock*)PyObject_Init((PyObject*)self->gb[i], &MtkGeoBlockType);
       MtkGeoBlock_init(self->gb[i],NULL,NULL);
    }
   
@@ -102,7 +103,8 @@ static PyMemberDef MtkBlockCorners_members[] = {
 };
 
 PyTypeObject MtkBlockCornersType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
     "MisrToolkit.MtkBlockCorners", /*tp_name*/
     sizeof(MtkBlockCorners),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/
